@@ -52,7 +52,7 @@ int main(int, char**)
   // Ptr<SimpleBlobDetector> detector = SimpleBlobDetector::create(params);
 
 
-  src = imread("cookie_good.bmp");
+  src = imread("cookie_bad.bmp");
   namedWindow(window1, CV_WINDOW_AUTOSIZE);
   // createTrackbar( trackbar_value,
   //               window1, &low_canny,

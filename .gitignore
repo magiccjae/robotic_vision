@@ -1,6 +1,7 @@
 # ignore
-CMakeFiles/
-build/
-CMakeCache.txt/
-Makefile/
-cmake_install.cmake/
+*CMakeFiles/
+*build/*
+*CMakeCache.txt
+*Makefile
+*cmake_install.cmake
+*visual_inspection
