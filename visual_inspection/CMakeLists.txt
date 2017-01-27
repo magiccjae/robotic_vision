@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+project( visual_inspection )
+find_package( OpenCV REQUIRED )
+add_executable(visual_inspection visual_inspection.cpp )
+target_link_libraries(visual_inspection ${OpenCV_LIBS} )
