@@ -53,6 +53,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     Mat mHSV;
     Mat mChannel;
     Mat mDisplay;
+    Mat cur_image;
     int	bufferIndex;
     int FrameHeight;
     int FrameWidth;
@@ -131,6 +132,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
             mRgba[i]= new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         }
         mDisplay= new Mat();
+        cur_image = new Mat();
         mHSV= new Mat();
         mChannel = new Mat();
 
@@ -185,6 +187,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         }
         viewMode = MenuItems.indexOf(item.toString());
         mDisplay= new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
+        cur_image = new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
 
         return super.onOptionsItemSelected(item);
     }
@@ -230,10 +233,13 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                  //////   ///////  //    //    //    //     //  ///////  ////////
 
                 // inputFrame.rgba() is the current frame, mDisplay is the Mat displayed live
+                cur_image = inputFrame.rgba();
 
                 // populate each grid cell with content from image
                 // AND evaluate if it is occupied, if occupied add to running sum
                 // CODE HERE <<<<<< --------
+
+
 
 
 
