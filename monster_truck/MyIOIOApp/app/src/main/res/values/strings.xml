@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">MyIOIOApp</string>
+    <string name="action_settings">Settings</string>
+
+    <dimen name="large_text_size">64sp</dimen>
+    <dimen name="medium_text_size">32sp</dimen>
+    <dimen name="small_text_size">16sp</dimen>
+    <dimen name="button_width">600dp</dimen>
+    <dimen name="button_height">80dp</dimen>
+
+    <color name="svw_blue">#ff15168c</color>
+    <color name="svw_cyan">#ffc7e3ff</color>
+    <color name="svw_gray">#CECECE</color>
+
+    <string name="main_menu">IOIO Test</string>
+    <string name="led_on">LED On</string>
+    <string name="led_off">LED Off</string>
+
+    <string name="toggle_button">Toggle Button</string>
+
+</resources>

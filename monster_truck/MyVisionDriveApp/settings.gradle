@@ -1,0 +1,5 @@
+include ':app'
+include ':openCVLibrary2410'
+include ':iOIOLibAndroid'
+include ':iOIOLibAndroidDevice'
+include ':iOIOLibAccessory'
