@@ -62,6 +62,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     Mat cur_image_mod;
     Mat weights_table;
     Mat weights;
+    Mat weights_abs;
     Size sz;
     int grid_rows;
     int grid_columns;
@@ -69,6 +70,10 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     int	bufferIndex;
     int FrameHeight;
     int FrameWidth;
+    Scalar sum_out;
+    Scalar zz;
+    double steer_score;
+    double weights_scale;
 
     // IOIO Control
     boolean LED = false;
@@ -203,6 +208,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         mDisplay= new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         cur_image = new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         cur_image_mod = new Mat();
+        weights_abs = new Mat();
         weights_table = new Mat(9,16, CvType.CV_64FC1);
         weights_table.put(0, 0, // row and column number - leave at zero
         -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
@@ -220,8 +226,16 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         sz = new Size(grid_columns, grid_rows);
         weights = new Mat();
 
+
         // resize weights to same dimensions of grid
         Imgproc.resize(weights_table, weights, sz , 0, 0, Imgproc.INTER_CUBIC);
+
+        // generate the weight scale
+        zz = new Scalar(0,0,0);
+        Core.absdiff(weights, zz, weights_abs);     // absolute value of weights_abs
+        zz = Core.sumElems(weights_abs);            // total sum of abs elements
+        weights_scale = zz.val[0];                  // extract the double of the total sum
+
 
 
         return super.onOptionsItemSelected(item);
@@ -296,13 +310,13 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                 Core.multiply(cur_image_mod, weights, cur_image_mod);
 
                 // sum all the elements of the resulting weighted grid
-                
+                sum_out = Core.sumElems(cur_image_mod);
+                steer_score = sum_out.val[0];
 
+                // normalize the steer score based on the max possible magnitude
+                steer_score = steer_score/weights_scale;
 
-                // convert final result of running sum into a steering value
-
-
-
+                // NEED TO CONVERT THE SCORE (0-1 value) TO PWM BELOW
 
                 // set the steering and power based on visual processing results
                 MYinputValueX = 0; // steering    -1500 to 1500 positive is left, negative is right
