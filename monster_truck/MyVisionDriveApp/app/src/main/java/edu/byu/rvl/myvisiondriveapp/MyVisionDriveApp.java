@@ -60,9 +60,12 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     Mat mDisplay;
     Mat cur_image;
     Mat cur_image_mod;
+    Mat weights_table;
+    Mat weights;
     Size sz;
-    int grid_x;
-    int grid_y;
+    int grid_rows;
+    int grid_columns;
+    int thresh;
     int	bufferIndex;
     int FrameHeight;
     int FrameWidth;
@@ -142,8 +145,6 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
             mRgba[i]= new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         }
         mDisplay= new Mat();
-        cur_image = new Mat();
-        cur_image_mod = new Mat();
 
         mHSV= new Mat();
         mChannel = new Mat();
@@ -202,9 +203,26 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         mDisplay= new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         cur_image = new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         cur_image_mod = new Mat();
-        grid_x = 16;
-        grid_y = 9;
-        sz = new Size(grid_x, grid_y);
+        weights_table = new Mat(9,16, CvType.CV_64FC1);
+        weights_table.put(0, 0, // row and column number - leave at zero
+        -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
+        -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,
+        -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,
+        -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,
+        -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,
+        -7, -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,  7,
+        -8, -7, -6, -5, -4, -3,  0,  0,  0,  0,  3,  4,  5,  6,  7,  8,
+        -9, -8, -7, -6, -5, -4, -3,  0,  0,  3,  4,  5,  6,  7,  8,  9,
+        -9, -9, -8, -7, -6, -5, -4, -3,  3,  4,  5,  6,  7,  8,  9,  9);
+        thresh = 120;
+        grid_rows = 18;
+        grid_columns = 32;
+        sz = new Size(grid_columns, grid_rows);
+        weights = new Mat();
+
+        // resize weights to same dimensions of grid
+        Imgproc.resize(weights_table, weights, sz , 0, 0, Imgproc.INTER_CUBIC);
+
 
         return super.onOptionsItemSelected(item);
     }
@@ -255,27 +273,30 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                 // populate each grid cell with content from image
                 // AND evaluate if it is occupied, if occupied add to running sum
 
-                // resize current frame
-                Imgproc.resize(cur_image, cur_image_mod, sz , 0, 0, Imgproc.INTER_NEAREST );
-
+                // resize current frame to size of occupancy grid
+                Imgproc.resize(cur_image, cur_image_mod, sz , 0, 0, Imgproc.INTER_NEAREST);
 
                 // cur_image_mod is the color grid, now convert to HSV
                 Imgproc.cvtColor(cur_image_mod, cur_image_mod, Imgproc.COLOR_RGB2HSV);
 
-                // extract the saturation channels
+                // extract the saturation channel
                 Core.extractChannel(cur_image_mod, cur_image_mod, 1);
 
                 // apply the threshold
-                Imgproc.threshold(cur_image_mod, cur_image_mod, 120, 255, Imgproc.THRESH_BINARY);
+                Imgproc.threshold(cur_image_mod, cur_image_mod, thresh, 255, Imgproc.THRESH_BINARY);
 
                 // scale the occupancy grid back up for display
                 Imgproc.resize(cur_image_mod, mDisplay, mDisplay.size(), 0, 0, Imgproc.INTER_AREA );
 
                 // scale cur_image_mod to 0-1
-                // create LUT (human readable)
-                // resize LUT to same dimensions of grid
-                // multiply
-                // sum
+                Core.normalize(cur_image_mod, cur_image_mod, 1, 0, Core.NORM_MINMAX);
+
+                // element-wise multiply the 0-1 grid by the weights
+                cur_image_mod.convertTo(cur_image_mod, CvType.CV_64FC1); // conversion necessary
+                Core.multiply(cur_image_mod, weights, cur_image_mod);
+
+                // sum all the elements of the resulting weighted grid
+                
 
 
                 // convert final result of running sum into a steering value
