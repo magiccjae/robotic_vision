@@ -34,6 +34,7 @@ import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOActivity;
+import ioio.lib.spi.Log;
 
 import static org.opencv.imgproc.Imgproc.INTER_NEAREST;
 
@@ -50,6 +51,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     public static int				inputValueY = 0;
     public static int				MYinputValueX = 0;
     public static int				MYinputValueY = 0;
+    private static final String     TAG = "JeffsMessage"; // tip from Dallin about debugging
 
     private ArrayList<String> MenuItems = new ArrayList<String>();
     Mat mRgba[];
@@ -102,6 +104,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         mOpenCvCameraView = (CameraBridgeViewBase) new JavaCameraView(this, -1);
         setContentView(mOpenCvCameraView);
         mOpenCvCameraView.setCvCameraViewListener(this);
+        Log.i(TAG,"onCreate");
     }
 
     @Override
@@ -141,9 +144,6 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         mDisplay= new Mat();
         cur_image = new Mat();
         cur_image_mod = new Mat();
-        grid_x = 16;
-        grid_y = 9;
-        sz = new Size(grid_x, grid_y);
 
         mHSV= new Mat();
         mChannel = new Mat();
@@ -257,23 +257,28 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
 
                 // resize current frame
                 Imgproc.resize(cur_image, cur_image_mod, sz , 0, 0, Imgproc.INTER_NEAREST );
-                Imgproc.resize(cur_image_mod, mDisplay, mDisplay.size(), 0, 0, Imgproc.INTER_AREA );
+
 
                 // cur_image_mod is the color grid, now convert to HSV
                 Imgproc.cvtColor(cur_image_mod, cur_image_mod, Imgproc.COLOR_RGB2HSV);
 
-                // threshold
+                // extract the saturation channels
+                Core.extractChannel(cur_image_mod, cur_image_mod, 1);
 
-                // loop through occupancy grid to get rolling sum
+                // apply the threshold
+                Imgproc.threshold(cur_image_mod, cur_image_mod, 120, 255, Imgproc.THRESH_BINARY);
 
+                // scale the occupancy grid back up for display
+                Imgproc.resize(cur_image_mod, mDisplay, mDisplay.size(), 0, 0, Imgproc.INTER_AREA );
 
-
-
+                // scale cur_image_mod to 0-1
+                // create LUT (human readable)
+                // resize LUT to same dimensions of grid
+                // multiply
+                // sum
 
 
                 // convert final result of running sum into a steering value
-
-
 
 
 
