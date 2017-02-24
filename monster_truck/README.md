@@ -5,3 +5,5 @@ MyIOIOApp is a very simple app that allows and android device to send steering a
 MyOpenCVApp is a visual processing app without any integration with the truck. I never used this much.
 
 MyVisionDriveApp is an app that does visual processing and truck commands at the same time. The meat is found in the MyVisionDriveApp.java file.
+
+test folder contains the test program for vision algorithm. It also has a video for testing.
