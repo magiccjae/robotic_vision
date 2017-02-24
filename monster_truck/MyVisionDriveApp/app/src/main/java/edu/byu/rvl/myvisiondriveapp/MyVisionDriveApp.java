@@ -58,7 +58,9 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     Mat mDisplay;
     Mat cur_image;
     Mat cur_image_mod;
-    Size sz = new Size(100, 100);
+    Size sz;
+    int grid_x;
+    int grid_y;
     int	bufferIndex;
     int FrameHeight;
     int FrameWidth;
@@ -139,6 +141,9 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         mDisplay= new Mat();
         cur_image = new Mat();
         cur_image_mod = new Mat();
+        grid_x = 16;
+        grid_y = 9;
+        sz = new Size(grid_x, grid_y);
 
         mHSV= new Mat();
         mChannel = new Mat();
@@ -196,6 +201,9 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         mDisplay= new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         cur_image = new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         cur_image_mod = new Mat();
+        grid_x = 16;
+        grid_y = 9;
+        sz = new Size(grid_x, grid_y);
 
         return super.onOptionsItemSelected(item);
     }
@@ -242,19 +250,27 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
 
                 // inputFrame.rgba() is the current frame, mDisplay is the Mat displayed live
                 cur_image = inputFrame.rgba();
-                //cur_image_mod = inputFrame.rgba();
 
                 // populate each grid cell with content from image
                 // AND evaluate if it is occupied, if occupied add to running sum
 
+                // resize current frame
                 Imgproc.resize(cur_image, cur_image_mod, sz , 0, 0, Imgproc.INTER_NEAREST );
                 Imgproc.resize(cur_image_mod, mDisplay, mDisplay.size(), 0, 0, Imgproc.INTER_AREA );
+
+                // cur_image_mod is the grid, now convert to HSV
+
+                // threshold
+
+                // loop through occupancy grid to get rolling sum
+
+
 
 
 
 
                 // convert final result of running sum into a steering value
-                // CODE HERE <<<<<< --------
+
 
 
 
