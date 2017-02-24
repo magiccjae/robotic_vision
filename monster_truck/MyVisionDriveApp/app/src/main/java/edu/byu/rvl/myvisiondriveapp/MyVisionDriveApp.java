@@ -185,6 +185,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         menu.add(MenuItems.get(5));
         menu.add(MenuItems.get(6));
         menu.add(MenuItems.get(7));
+        menu.add(MenuItems.get(8));
         return true;
     }
 
@@ -258,7 +259,8 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                 Imgproc.resize(cur_image, cur_image_mod, sz , 0, 0, Imgproc.INTER_NEAREST );
                 Imgproc.resize(cur_image_mod, mDisplay, mDisplay.size(), 0, 0, Imgproc.INTER_AREA );
 
-                // cur_image_mod is the grid, now convert to HSV
+                // cur_image_mod is the color grid, now convert to HSV
+                Imgproc.cvtColor(cur_image_mod, cur_image_mod, Imgproc.COLOR_RGB2HSV);
 
                 // threshold
 
