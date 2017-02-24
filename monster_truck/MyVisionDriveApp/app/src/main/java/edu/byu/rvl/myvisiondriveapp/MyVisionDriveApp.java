@@ -21,6 +21,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
@@ -33,6 +34,8 @@ import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOActivity;
+
+import static org.opencv.imgproc.Imgproc.INTER_NEAREST;
 
 public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListener, CvCameraViewListener2 {
     private CameraBridgeViewBase mOpenCvCameraView;
@@ -54,6 +57,8 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     Mat mChannel;
     Mat mDisplay;
     Mat cur_image;
+    Mat cur_image_mod;
+    Size sz = new Size(100, 100);
     int	bufferIndex;
     int FrameHeight;
     int FrameWidth;
@@ -133,6 +138,8 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         }
         mDisplay= new Mat();
         cur_image = new Mat();
+        cur_image_mod = new Mat();
+
         mHSV= new Mat();
         mChannel = new Mat();
 
@@ -188,6 +195,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         viewMode = MenuItems.indexOf(item.toString());
         mDisplay= new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         cur_image = new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
+        cur_image_mod = new Mat();
 
         return super.onOptionsItemSelected(item);
     }
@@ -234,11 +242,13 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
 
                 // inputFrame.rgba() is the current frame, mDisplay is the Mat displayed live
                 cur_image = inputFrame.rgba();
+                //cur_image_mod = inputFrame.rgba();
 
                 // populate each grid cell with content from image
                 // AND evaluate if it is occupied, if occupied add to running sum
-                // CODE HERE <<<<<< --------
 
+                Imgproc.resize(cur_image, cur_image_mod, sz , 0, 0, Imgproc.INTER_NEAREST );
+                Imgproc.resize(cur_image_mod, mDisplay, mDisplay.size(), 0, 0, Imgproc.INTER_AREA );
 
 
 
@@ -255,7 +265,8 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                 MYinputValueY = 100; // power     -2500 to 2500
 
                 // display the binarized occupancy grid real-time
-                mDisplay = inputFrame.rgba();
+                //mDisplay = inputFrame.rgba();
+                //Imgproc.cvtColor(cur_image_mod, mDisplay, Imgproc.COLOR_GRAY2RGB);
 
 
                 break;
