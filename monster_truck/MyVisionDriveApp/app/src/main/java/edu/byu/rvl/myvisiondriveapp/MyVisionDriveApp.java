@@ -210,27 +210,27 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         cur_image_mod = new Mat();
         weights_abs = new Mat();
         weights_table = new Mat(9,16, CvType.CV_64FC1);
-//        weights_table.put(0, 0, // row and column number - leave at zero
-//        -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
-//        -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,
-//        -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,
-//        -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,
-//        -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,
-//        -7, -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,  7,
-//        -8, -7, -6, -5, -4, -3,  0,  0,  0,  0,  3,  4,  5,  6,  7,  8,
-//        -9, -8, -7, -6, -5, -4, -3,  0,  0,  3,  4,  5,  6,  7,  8,  9,
-//        -9, -9, -8, -7, -6, -5, -4, -3,  3,  4,  5,  6,  7,  8,  9,  9);
-
         weights_table.put(0, 0, // row and column number - leave at zero
-         0,  0,  0,  0,  0,  0,  0, -1, 1, 0, 0, 0, 0, 0, 0, 0,
-         0,  0,  0,  0,  0,  0, -1, -2, 2, 1, 0, 0, 0, 0, 0, 0,
-         0,  0,  0,  0,  0, -1, -2, -3, 3, 2, 1, 0, 0, 0, 0, 0,
-         0,  0,  0,  0, -1, -2, -3, -4, 4, 3, 2, 1, 0, 0, 0, 0,
-         0,  0,  0, -1, -2, -3, -4, -5, 5, 4, 3, 2, 1, 0, 0, 0,
-         0,  0, -1, -2, -3, -4, -5, -6, 6, 5, 4, 3, 2, 1, 0, 0,
-         0, -1, -2, -3, -4, -5, -6, -7, 7, 6, 5, 4, 3, 2, 1, 0,
-        -1, -2, -3, -4, -5, -6, -7, -8, 8, 7, 6, 5, 4, 3, 2, 1,
-        -2, -3, -4, -5, -6, -7, -8, -9, 9, 8, 7, 6, 5, 4, 3, 2);
+        -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
+        -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,
+        -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,
+        -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,
+        -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,
+        -7, -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,  7,
+        -8, -7, -6, -5, -4, -3,  0,  0,  0,  0,  3,  4,  5,  6,  7,  8,
+        -9, -8, -7, -6, -5, -4, -3,  0,  0,  3,  4,  5,  6,  7,  8,  9,
+        -9, -9, -8, -7, -6, -5, -4, -3,  3,  4,  5,  6,  7,  8,  9,  9);
+
+//        weights_table.put(0, 0, // row and column number - leave at zero
+//         0,  0,  0,  0,  0,  0,  0, -1, 1, 0, 0, 0, 0, 0, 0, 0,
+//         0,  0,  0,  0,  0,  0, -1, -2, 2, 1, 0, 0, 0, 0, 0, 0,
+//         0,  0,  0,  0,  0, -1, -2, -3, 3, 2, 1, 0, 0, 0, 0, 0,
+//         0,  0,  0,  0, -1, -2, -3, -4, 4, 3, 2, 1, 0, 0, 0, 0,
+//         0,  0,  0, -1, -2, -3, -4, -5, 5, 4, 3, 2, 1, 0, 0, 0,
+//         0,  0, -1, -2, -3, -4, -5, -6, 6, 5, 4, 3, 2, 1, 0, 0,
+//         0, -1, -2, -3, -4, -5, -6, -7, 7, 6, 5, 4, 3, 2, 1, 0,
+//        -1, -2, -3, -4, -5, -6, -7, -8, 8, 7, 6, 5, 4, 3, 2, 1,
+//        -2, -3, -4, -5, -6, -7, -8, -9, 9, 8, 7, 6, 5, 4, 3, 2);
 
         thresh = 120;
         grid_rows = 18;
@@ -326,17 +326,31 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                 steer_score = sum_out.val[0];
 
                 // normalize the steer score based on the max possible magnitude
-                steer_score = steer_score/weights_scale;
+                //steer_score = steer_score/weights_scale;
 
-
-                // NEED TO CONVERT THE SCORE (0-1 value) TO PWM BELOW
+                // NEED TO CONVERT THE SCORE (-1, 1 value) TO PWM BELOW
 
                 // set the steering and power based on visual processing results
-                MYinputValueX = (int)(steer_score*1000.0);   // steering    -1500 to 1500 positive is left, negative is right
-                MYinputValueY = 0; // power     -2500 to 2500
+
+                MYinputValueX = (int)(steer_score*2);   // steering    -1500 to 1500 positive is left, negative is right
+                // upper and lower limit for steering value
+                int steer_limit = 500;
+                if(MYinputValueX > steer_limit){
+                    MYinputValueX = steer_limit;
+                }
+                else if(MYinputValueX < -steer_limit){
+                    MYinputValueX = -steer_limit;
+                }
+
+                // upper and lower limit for power value
+                int pup = 100;
+                int plow = 80;
+                double slope = -(double)(pup-plow)/(double)steer_limit;
+                MYinputValueY = (int)(slope*Math.abs(MYinputValueX)+pup);
 
                 Imgproc.cvtColor(mDisplay, mDisplay, Imgproc.COLOR_GRAY2RGB);
-                Core.putText(mDisplay, Integer.toString(MYinputValueX), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(255, 0, 0, 255), 2);
+                Core.putText(mDisplay, "S" + Integer.toString(MYinputValueX), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(255, 0, 0, 255), 2);
+                Core.putText(mDisplay, "P" + Integer.toString(MYinputValueY), new Point(10, 100), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(255, 0, 0, 255), 2);
 
                 // display the binarized occupancy grid real-time
                 //mDisplay = inputFrame.rgba();
