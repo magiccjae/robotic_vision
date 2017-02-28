@@ -53,6 +53,8 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     public static int				MYinputValueY = 0;
     private static final String     TAG = "JeffsMessage"; // tip from Dallin about debugging
 
+    public PulseInput encoderVar;
+
     private ArrayList<String> MenuItems = new ArrayList<String>();
     Mat mRgba[];
     Mat mHSV;
@@ -204,6 +206,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         if (id == R.id.action_settings) {
             return true;
         }
+
         viewMode = MenuItems.indexOf(item.toString());
         mDisplay= new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
         cur_image = new Mat(FrameHeight, FrameWidth, CvType.CV_8UC4);
@@ -247,8 +250,6 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         Core.absdiff(weights, zz, weights_abs);     // absolute value of weights_abs
         zz = Core.sumElems(weights_abs);            // total sum of abs elements
         weights_scale = zz.val[0];                  // extract the double of the total sum
-
-
 
         return super.onOptionsItemSelected(item);
     }
@@ -343,14 +344,50 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                 }
 
                 // upper and lower limit for power value
-                int pup = 100;
-                int plow = 80;
+                int pup = 1000;
+                int plow = 600;
                 double slope = -(double)(pup-plow)/(double)steer_limit;
-                MYinputValueY = (int)(slope*Math.abs(MYinputValueX)+pup);
+
+                float desired_speed = (float)(slope*Math.abs(MYinputValueX)+pup);
 
                 Imgproc.cvtColor(mDisplay, mDisplay, Imgproc.COLOR_GRAY2RGB);
-                Core.putText(mDisplay, "S" + Integer.toString(MYinputValueX), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(255, 0, 0, 255), 2);
-                Core.putText(mDisplay, "P" + Integer.toString(MYinputValueY), new Point(10, 100), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(255, 0, 0, 255), 2);
+                Core.putText(mDisplay, "S " + Integer.toString(MYinputValueX), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(0, 0, 255, 255), 3);
+                Core.putText(mDisplay, "P " + Integer.toString(MYinputValueY), new Point(10, 100), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(0, 0, 255, 255), 3);
+
+                // encoder value reading
+                float encoder_frequency = 0;
+                try {
+                    encoder_frequency = encoderVar.getFrequency();
+                }
+                catch(InterruptedException e){
+                    e.printStackTrace();
+                }
+                catch(ConnectionLostException e){
+                    e.printStackTrace();
+                }
+                Core.putText(mDisplay, "Encoder " + Float.toString(encoder_frequency), new Point(10, 200), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(0, 0, 255, 255), 3);
+
+                // for testing
+//                MYinputValueX = 0;
+//                desired_speed = 500;
+                // speed controller
+                if(encoder_frequency < desired_speed){
+                    MYinputValueY = MYinputValueY + 1;
+                }
+                else{
+                    MYinputValueY = MYinputValueY - 3;
+                }
+                int power_max = 100;
+                int power_min = 70;
+                if(MYinputValueY > power_max){
+                    MYinputValueY = power_max;
+                }
+                else if(MYinputValueY < power_min){
+                    MYinputValueY = power_min;
+                }
+                // !!!!!!!!!!!!!!!! Menu items initialized strangely
+                // !!!!!!!!!!!!!!!! Stop logic, tuning the weight, Threshold tuning
+
 
                 // display the binarized occupancy grid real-time
                 //mDisplay = inputFrame.rgba();
@@ -438,7 +475,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         private DigitalOutput led_;
         private PwmOutput turnOutput_;		// pwm output for turn motor
         private PwmOutput pwrOutput_;		// pwm output for drive motor
-        private PulseInput encoderInput_;   // pulse input to measure speed
+        public PulseInput encoderInput_;   // pulse input to measure speed
 
         @Override
         protected void setup() throws ConnectionLostException {
@@ -447,6 +484,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
             turnOutput_ = ioio_.openPwmOutput(12, 100);     // Hard Left: 2000, Straight: 1400, Hard Right: 1000
             pwrOutput_ = ioio_.openPwmOutput(14, 100);      // Fast Forward: 2500, Stop: 1540, Fast Reverse: 500
             encoderInput_ = ioio_.openPulseInput(3, PulseInput.PulseMode.FREQ);
+            encoderVar = encoderInput_;
         }
 
         @Override
