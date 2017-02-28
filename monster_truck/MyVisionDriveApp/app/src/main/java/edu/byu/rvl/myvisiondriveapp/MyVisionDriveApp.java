@@ -210,16 +210,28 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         cur_image_mod = new Mat();
         weights_abs = new Mat();
         weights_table = new Mat(9,16, CvType.CV_64FC1);
+//        weights_table.put(0, 0, // row and column number - leave at zero
+//        -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
+//        -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,
+//        -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,
+//        -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,
+//        -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,
+//        -7, -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,  7,
+//        -8, -7, -6, -5, -4, -3,  0,  0,  0,  0,  3,  4,  5,  6,  7,  8,
+//        -9, -8, -7, -6, -5, -4, -3,  0,  0,  3,  4,  5,  6,  7,  8,  9,
+//        -9, -9, -8, -7, -6, -5, -4, -3,  3,  4,  5,  6,  7,  8,  9,  9);
+
         weights_table.put(0, 0, // row and column number - leave at zero
-        -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
-        -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,
-        -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,
-        -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,
-        -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,
-        -7, -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,  7,
-        -8, -7, -6, -5, -4, -3,  0,  0,  0,  0,  3,  4,  5,  6,  7,  8,
-        -9, -8, -7, -6, -5, -4, -3,  0,  0,  3,  4,  5,  6,  7,  8,  9,
-        -9, -9, -8, -7, -6, -5, -4, -3,  3,  4,  5,  6,  7,  8,  9,  9);
+         0,  0,  0,  0,  0,  0,  0, -1, 1, 0, 0, 0, 0, 0, 0, 0,
+         0,  0,  0,  0,  0,  0, -1, -2, 2, 1, 0, 0, 0, 0, 0, 0,
+         0,  0,  0,  0,  0, -1, -2, -3, 3, 2, 1, 0, 0, 0, 0, 0,
+         0,  0,  0,  0, -1, -2, -3, -4, 4, 3, 2, 1, 0, 0, 0, 0,
+         0,  0,  0, -1, -2, -3, -4, -5, 5, 4, 3, 2, 1, 0, 0, 0,
+         0,  0, -1, -2, -3, -4, -5, -6, 6, 5, 4, 3, 2, 1, 0, 0,
+         0, -1, -2, -3, -4, -5, -6, -7, 7, 6, 5, 4, 3, 2, 1, 0,
+        -1, -2, -3, -4, -5, -6, -7, -8, 8, 7, 6, 5, 4, 3, 2, 1,
+        -2, -3, -4, -5, -6, -7, -8, -9, 9, 8, 7, 6, 5, 4, 3, 2);
+
         thresh = 120;
         grid_rows = 18;
         grid_columns = 32;
@@ -316,11 +328,15 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                 // normalize the steer score based on the max possible magnitude
                 steer_score = steer_score/weights_scale;
 
+
                 // NEED TO CONVERT THE SCORE (0-1 value) TO PWM BELOW
 
                 // set the steering and power based on visual processing results
-                MYinputValueX = 0; // steering    -1500 to 1500 positive is left, negative is right
-                MYinputValueY = 100; // power     -2500 to 2500
+                MYinputValueX = (int)(steer_score*1000.0);   // steering    -1500 to 1500 positive is left, negative is right
+                MYinputValueY = 0; // power     -2500 to 2500
+
+                Imgproc.cvtColor(mDisplay, mDisplay, Imgproc.COLOR_GRAY2RGB);
+                Core.putText(mDisplay, Integer.toString(MYinputValueX), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(255, 0, 0, 255), 2);
 
                 // display the binarized occupancy grid real-time
                 //mDisplay = inputFrame.rgba();
@@ -389,11 +405,11 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                 break;
         }
         // Use Core.putText in 2.4.10   Imgproc.putText in 3.1.0 doesn't work
-        if (pointerCount == 1) Core.putText(mDisplay, String.valueOf(inputValueX) + " " + String.valueOf(inputValueY), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(255, 0, 0, 255), 2);
-        if (pointerCount == 2) {
-            Core.putText(mDisplay, String.valueOf(inputValueX) + " " + String.valueOf(inputValueY), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(0, 255, 0, 255), 2);
-            Core.rectangle(mDisplay, new Point(TouchX[0], TouchY[0]), new Point(TouchX[1], TouchY[1]), new Scalar(0, 255, 0, 255), 2);
-        }
+//        if (pointerCount == 1) Core.putText(mDisplay, String.valueOf(inputValueX) + " " + String.valueOf(inputValueY), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(255, 0, 0, 255), 2);
+//        if (pointerCount == 2) {
+//            Core.putText(mDisplay, String.valueOf(inputValueX) + " " + String.valueOf(inputValueY), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(0, 255, 0, 255), 2);
+//            Core.rectangle(mDisplay, new Point(TouchX[0], TouchY[0]), new Point(TouchX[1], TouchY[1]), new Scalar(0, 255, 0, 255), 2);
+//        }
         return mDisplay;
     }
 
