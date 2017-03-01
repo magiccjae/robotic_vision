@@ -216,15 +216,15 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         weights_abs = new Mat();
         weights_table = new Mat(9,16, CvType.CV_64FC1);
         weights_table.put(0, 0, // row and column number - leave at zero
-        -4, -3, -3, -2, -2, -2,  0,  0,  0,  0,  2,  2,  2,  3,  3,  4,
-        -3, -4, -4, -3, -3,  0,  0,  0,  0,  0,  0,  3,  3,  4,  4,  3,
-        -3, -2, -4, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  4,  2,  3,
+        -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
+        -2,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,
+        -3, -2,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,  3,
         -6, -4, -2,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,  4,  6,
         -7, -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,  7,
-        -7, -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,  7,
-        -8, -7, -6, -5, -4, -3,  0,  0,  0,  0,  3,  4,  5,  6,  7,  8,
-        -9, -8, -7, -6, -5, -4, -3,  0,  0,  3,  4,  5,  6,  7,  8,  9,
-        -9, -9, -8, -7, -6, -5, -4, -3,  3,  4,  5,  6,  7,  8,  9,  9);
+        -9, -8, -7, -6, -5,  0,  0,  0,  0,  0,  0,  5,  6,  7,  8,  9,
+        -9, -8, -7, -6, -5, -4,  0,  0,  0,  0,  4,  5,  6,  7,  8,  9,
+        -9, -9, -8, -7, -6, -5, -5,  0,  0,  5,  5,  6,  7,  8,  9,  9,
+        -9, -9, -9, -8, -8, -8, -7, -7,  7,  7,  8,  8,  8,  9,  9,  9);
 
 //        weights_table.put(0, 0, // row and column number - leave at zero
 //         0,  0,  0,  0,  0,  0,  0, -1, 1, 0, 0, 0, 0, 0, 0, 0,
@@ -349,7 +349,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
 
                 // set the steering and power based on visual processing results
 
-                MYinputValueX = (int)(steer_score*3);   // steering    -1500 to 1500 positive is left, negative is right
+                MYinputValueX = (int)(steer_score*4);   // steering    -1500 to 1500 positive is left, negative is right
                 // upper and lower limit for steering value
                 int steer_limit = 500;
                 if(MYinputValueX > steer_limit){
@@ -368,7 +368,6 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
 
                 Imgproc.cvtColor(mDisplay, mDisplay, Imgproc.COLOR_GRAY2RGB);
                 Core.putText(mDisplay, "S " + Integer.toString(MYinputValueX), new Point(10, 50), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(0, 0, 255, 255), 3);
-                Core.putText(mDisplay, "P " + Integer.toString(MYinputValueY), new Point(10, 100), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(0, 0, 255, 255), 3);
 
                 // encoder value reading
                 float encoder_frequency = 0;
@@ -388,27 +387,24 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
 //                desired_speed = 500;
                 // speed controller
                 if(encoder_frequency < desired_speed){
-                    MYinputValueY = MYinputValueY + 1;
+                    MYinputValueY = MYinputValueY + 2;
                 }
                 else{
-                    MYinputValueY = MYinputValueY - 3;
+                    MYinputValueY = MYinputValueY - 10;
                 }
-                int power_max = 100;
-                int power_min = 80;
+                int power_max = 200;
+                int power_min = 100;
                 if(MYinputValueY > power_max){
                     MYinputValueY = power_max;
                 }
                 else if(MYinputValueY < power_min){
                     MYinputValueY = power_min;
                 }
-                // !!!!!!!!!!!!!!!! Menu items initialized strangely
-                // !!!!!!!!!!!!!!!! Stop logic, tuning the weight, Threshold tuning
-
+                Core.putText(mDisplay, "P " + Integer.toString(MYinputValueY), new Point(10, 100), Core.FONT_HERSHEY_COMPLEX, 2.0, new Scalar(0, 0, 255, 255), 3);
 
                 // display the binarized occupancy grid real-time
                 //mDisplay = inputFrame.rgba();
                 //Imgproc.cvtColor(cur_image_mod, mDisplay, Imgproc.COLOR_GRAY2RGB);
-
 
                 break;
             case 1:         // RGB
