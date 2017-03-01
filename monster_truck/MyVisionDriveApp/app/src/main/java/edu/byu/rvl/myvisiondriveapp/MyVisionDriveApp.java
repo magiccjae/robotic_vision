@@ -63,7 +63,9 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     Mat cur_image;
     Mat cur_image_mod;
     Mat weights_table;
+    Mat weights_table_back;
     Mat weights;
+    Mat weights_back;
     Mat weights_abs;
     Size sz;
     int grid_rows;
@@ -215,6 +217,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         cur_image_mod = new Mat();
         weights_abs = new Mat();
         weights_table = new Mat(9,16, CvType.CV_64FC1);
+        weights_table_back = new Mat(9,16, CvType.CV_64FC1);
         weights_table.put(0, 0, // row and column number - leave at zero
         -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
         -2,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,
@@ -225,6 +228,17 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         -9, -8, -7, -6, -5, -4,  0,  0,  0,  0,  4,  5,  6,  7,  8,  9,
         -9, -9, -8, -7, -6, -5, -5,  0,  0,  5,  5,  6,  7,  8,  9,  9,
         -9, -9, -9, -8, -8, -8, -7, -7,  7,  7,  8,  8,  8,  9,  9,  9);
+
+        weights_table_back.put(0, 0, // row and column number - leave at zero
+        0, 0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0, 0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0, 0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0, 0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        0, 0, 0, 0,  0,  0,  9,  9,  9,  9,  0,  0,  0,  0,  0,  0,
+        0, 0, 0, 0,  0,  0,  9,  9,  9,  9,  0,  0,  0,  0,  0,  0,
+        0, 0, 0, 0,  0,  0,  9,  9,  9,  9,  0,  0,  0,  0,  0,  0,
+        0, 0, 0, 0,  0,  0,  9,  9,  9,  9,  0,  0,  0,  0,  0,  0,
+        0, 0, 0, 0,  0,  0,  9,  9,  9,  9,  0,  0,  0,  0,  0,  0);
 
 //        weights_table.put(0, 0, // row and column number - leave at zero
 //         0,  0,  0,  0,  0,  0,  0, -1, 1, 0, 0, 0, 0, 0, 0, 0,
@@ -256,10 +270,12 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         grid_columns = 32;
         sz = new Size(grid_columns, grid_rows);
         weights = new Mat();
+        weights_back = new Mat();
 
 
         // resize weights to same dimensions of grid
         Imgproc.resize(weights_table, weights, sz , 0, 0, Imgproc.INTER_CUBIC);
+        Imgproc.resize(weights_table_back, weights_back, sz , 0, 0, Imgproc.INTER_CUBIC);
 
         // generate the weight scale
         zz = new Scalar(0,0,0);
@@ -359,7 +375,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                     MYinputValueX = -steer_limit;
                 }
 
-                // upper and lower limit for power value
+                // upper and lower limit for SPEED
                 int pup = 1000;
                 int plow = 600;
                 double slope = -(double)(pup-plow)/(double)steer_limit;
