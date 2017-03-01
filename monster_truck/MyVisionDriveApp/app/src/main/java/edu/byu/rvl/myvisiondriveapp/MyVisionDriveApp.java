@@ -77,6 +77,8 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
     double steer_score;
     double weights_scale;
 
+    Mat stop_table;
+
     // IOIO Control
     boolean LED = false;
     int     Frequency;
@@ -214,11 +216,11 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
         weights_abs = new Mat();
         weights_table = new Mat(9,16, CvType.CV_64FC1);
         weights_table.put(0, 0, // row and column number - leave at zero
-        -2, -2, -2, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  2,
-        -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,
-        -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,
-        -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,
-        -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,
+        -4, -3, -3, -2, -2, -2,  0,  0,  0,  0,  2,  2,  2,  3,  3,  4,
+        -3, -4, -4, -3, -3,  0,  0,  0,  0,  0,  0,  3,  3,  4,  4,  3,
+        -3, -2, -4, -2,  0,  0,  0,  0,  0,  0,  0,  0,  2,  4,  2,  3,
+        -6, -4, -2,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,  4,  6,
+        -7, -5, -4, -3,  0,  0,  0,  0,  0,  0,  0,  0,  3,  4,  5,  7,
         -7, -6, -5, -4, -3,  0,  0,  0,  0,  0,  0,  3,  4,  5,  6,  7,
         -8, -7, -6, -5, -4, -3,  0,  0,  0,  0,  3,  4,  5,  6,  7,  8,
         -9, -8, -7, -6, -5, -4, -3,  0,  0,  3,  4,  5,  6,  7,  8,  9,
@@ -234,6 +236,20 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
 //         0, -1, -2, -3, -4, -5, -6, -7, 7, 6, 5, 4, 3, 2, 1, 0,
 //        -1, -2, -3, -4, -5, -6, -7, -8, 8, 7, 6, 5, 4, 3, 2, 1,
 //        -2, -3, -4, -5, -6, -7, -8, -9, 9, 8, 7, 6, 5, 4, 3, 2);
+
+        stop_table = new Mat(9,16, CvType.CV_64FC1);
+        stop_table.put(0, 0, // row and column number - leave at zero
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+
 
         thresh = 120;
         grid_rows = 18;
@@ -333,7 +349,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
 
                 // set the steering and power based on visual processing results
 
-                MYinputValueX = (int)(steer_score*2);   // steering    -1500 to 1500 positive is left, negative is right
+                MYinputValueX = (int)(steer_score*3);   // steering    -1500 to 1500 positive is left, negative is right
                 // upper and lower limit for steering value
                 int steer_limit = 500;
                 if(MYinputValueX > steer_limit){
@@ -378,7 +394,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                     MYinputValueY = MYinputValueY - 3;
                 }
                 int power_max = 100;
-                int power_min = 70;
+                int power_min = 80;
                 if(MYinputValueY > power_max){
                     MYinputValueY = power_max;
                 }
