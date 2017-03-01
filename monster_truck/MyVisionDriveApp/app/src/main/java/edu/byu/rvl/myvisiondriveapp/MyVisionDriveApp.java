@@ -359,7 +359,7 @@ public class MyVisionDriveApp extends IOIOActivity implements View.OnTouchListen
                     MYinputValueX = -steer_limit;
                 }
 
-                // upper and lower limit for power value
+                // upper and lower limit for SPEED
                 int pup = 1000;
                 int plow = 600;
                 double slope = -(double)(pup-plow)/(double)steer_limit;
