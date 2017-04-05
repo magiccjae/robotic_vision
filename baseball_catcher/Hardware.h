@@ -11,12 +11,13 @@
 using namespace FlyCapture2;
 #endif
 
+#include "StereoTracker.h"
 #include "RoboteqWrapper.h"
 #include "opencv2/opencv.hpp"	// openCV headers
 using namespace std;
 using namespace cv;
 
-#define APP_DIRECTORY		"C:\\Projects\\BaseballCatcher\\"
+#define APP_DIRECTORY		"C:\\Projects\\BaseballCatcher - 7\\"
 #define	SHUTTER_SPEED		12.0					// Shutter speed in mSec
 #define WHITE_BALANCE_R		560;
 #define WHITE_BALANCE_B		740;
@@ -143,6 +144,7 @@ protected:
 
 public:
 	static  ImagingResources IR;
+	StereoTracker ST;
 	RECT	ImageRect[MAX_CAMERA];
 	CRect	DispRect[MAX_CAMERA];
 	CRect	SelectRect;

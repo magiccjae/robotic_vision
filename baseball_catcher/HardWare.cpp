@@ -18,6 +18,7 @@ CTCSys::CTCSys()
 	IR.FrameID = 0;
 	IR.CatchBall = FALSE;
 	OPENF("c:\\Projects\\RunTest.txt");
+	//ST.initClassMatrix(); // Initialize the tracker class
 }
 
 CTCSys::~CTCSys()
@@ -51,7 +52,7 @@ void CTCSys::QSStopThread()
 	// Must close the move event first
 	EventEndMove = TRUE;				// Set the falg to true first
 	SetEvent(QSMoveEvent);				// must set event to complete the while loop so the flag can be checked
-	do { 
+	do {
 		Sleep(100);
 		// SetEvent(QSProcessEvent);
 	} while(EventEndProcess == TRUE);
@@ -59,7 +60,7 @@ void CTCSys::QSStopThread()
 
 	// need to make sure camera acquisiton has stopped
 	EventEndProcess = TRUE;
-	do { 
+	do {
 		Sleep(100);
 		// SetEvent(QSProcessEvent);
 	} while(EventEndProcess == TRUE);
@@ -83,8 +84,8 @@ long QSProcessThreadFunc(CTCSys *QS)
 	int     i;
 	int     BufID = 0;
 	char    str[32];
-    long	FrameStamp;
-    
+  long	FrameStamp;
+
     FrameStamp = 0;
 	while (QS->EventEndProcess == FALSE) {
 #ifdef PTGREY		// Image Acquisition
@@ -93,7 +94,7 @@ long QSProcessThreadFunc(CTCSys *QS)
 				QS->IR.PGRError = QS->IR.pgrCamera[i]->RetrieveBuffer(&QS->IR.PtGBuf[i]);
 				// Get frame timestamp if exact frame time is needed.  Divide FrameStamp by 32768 to get frame time stamp in mSec
                 QS->IR.metaData[i] = QS->IR.PtGBuf[i].GetMetadata();
-				FrameStamp = QS->IR.metaData[i].embeddedTimeStamp;               
+				FrameStamp = QS->IR.metaData[i].embeddedTimeStamp;
 				if(QS->IR.PGRError == PGRERROR_OK){
 					QS->QSSysConvertToOpenCV(&QS->IR.AcqBuf[i], QS->IR.PtGBuf[i]);		// copy image data pointer to OpenCV Mat structure
 				}
@@ -118,52 +119,131 @@ long QSProcessThreadFunc(CTCSys *QS)
 		Sleep (100);
 #endif
 		// Process Image ProcBuf
-		if (QS->IR.CatchBall) {  	// Click on "Catch" button to toggle the CatchBall flag when done catching
+		if (QS->IR.CatchBall)
+		{
+			// Click on "Catch" button to toggle the CatchBall flag when done catching
 			// Images are acquired into ProcBuf[0] for left and ProcBuf[1] for right camera
 			// Need to create child image or small region of interest for processing to exclude background and speed up processing
 			// Mat child = QS->IR.ProcBuf[i](Rect(x, y, width, height));
-			for(i=0; i < QS->IR.NumCameras; i++) {
-#ifdef PTG_COLOR
-				cvtColor(QS->IR.ProcBuf[i][BufID], QS->IR.OutBuf1[i], CV_RGB2GRAY, 0);
-#else			// Example using Canny.  Input is ProcBuf.  Output is OutBuf1
-				Canny(QS->IR.ProcBuf[i], QS->IR.OutBuf1[i], 70, 100);
-#endif
-				// remove the Canny function above and add your ball detection and trajectory estimation code here
-				// calculate your estimated ball x, y location in inches and assigned them to moveX, and moveY below
+
+			/********************************************************OUR CODE ************************************************/
+			QS->ST.updateFrames(QS->IR.ProcBuf[0], QS->IR.ProcBuf[1]);
+			// findBall: Creates ROI around previous known location of ball and
+			// computes an absdiff against a background image and thresholds it.
+			// If found, updates the previous known location to new location
+			QS->ST.findBall();
+
+			//QS->IR.OutBuf1[0] = QS->ST.getLDiff();
+			//QS->IR.OutBuf1[1] = QS->ST.getRDiff();
+			Point3f last_pt = Point3f(1000, 1000, 1000);
+
+			if (QS->ST.foundBall())
+			{
+				// If we find the ball, calculate the 3D location
+				last_pt = QS->ST.calculate3DBallLocation();
+
+				//string ptstring = "(" + to_string(last_pt.x) + ", " + to_string(last_pt.y) + ", " + to_string(last_pt.z) + ")\n";
+				//OutputDebugStringA(ptstring.c_str());
 			}
-			// This is how you move the catcher.  QS->moveX and QS->moveY (both in inches) must be calculated and set first.
-			QS->Move_X = 0;					// replace 0 with your x coordinate
-			QS->Move_Y = 0;					// replace 0 with your y coordinate
-			SetEvent(QS->QSMoveEvent);		// Signal the move event to move catcher. The event will be reset in the move thread.
+			else
+				cout << "not found" << endl;
+
+			// if z is less then threshold hold, we start to move the catcher
+			int max_vector_size = 5;
+			//if(QS->ST.getCurrent3DPoint().z < z_threshold && QS->ST.isTracking()) 
+			if (QS->ST.get3DPoints().size() >= max_vector_size)
+			{
+				Point2d end = QS->ST.estimateEndPoint();
+
+				// This is how you move the catcher.  QS->moveX and QS->moveY (both in inches) must be calculated and set first.
+				QS->Move_X = end.x;					// replace 0 with your x coordinate
+				QS->Move_Y = end.y;					// replace 0 with your y coordinate
+				SetEvent(QS->QSMoveEvent);		// Signal the move event to move catcher. The event will be reset in the move thread.
+
+				// OutputDebugStringA()
+
+				// delay for 1 second
+				//Sleep(1000);
+
+				//QS->Move_X = 0;					// replace 0 with your x coordinate
+				//QS->Move_Y = 0;					// replace 0 with your y coordinate
+				//SetEvent(QS->QSMoveEvent);		// Signal the move event to move catcher. The event will be reset in the move thread.
+
+				//QS->ST.reset();
+			}
+
+			int z_threshold = 200;
+			if (last_pt.z < z_threshold)
+			{
+				Sleep(700);
+
+				QS->Move_X = 0;					// replace 0 with your x coordinate
+				QS->Move_Y = 0;					// replace 0 with your y coordinate
+				SetEvent(QS->QSMoveEvent);		// Signal the move event to move catcher. The event will be reset in the move thread.
+
+				QS->ST.reset();
+			}
 		}
+		else
+			QS->ST.getNewBG();
 		// Display Image
-		if (QS->IR.UpdateImage) {
-			for (i=0; i<QS->IR.NumCameras; i++) {
-				if (QS->IR.CaptureSequence || QS->IR.DisplaySequence) {
+		if (QS->IR.UpdateImage)
+		{
+			/*if (!QS->ST.bgAdded())
+			{
+				QS->ST.updateBackground(QS->IR.ProcBuf[0], QS->IR.ProcBuf[1]);
+			}*/
+
+			for (i=0; i<QS->IR.NumCameras; i++)
+			{
+				if (QS->IR.CaptureSequence || QS->IR.DisplaySequence)
+				{
 #ifdef PTG_COLOR
 					QS->IR.SaveBuf[i][QS->IR.FrameID].copyTo(QS->IR.DispBuf[i]);
 #else
 					QS->IR.OutBuf[0] = QS->IR.OutBuf[1] = QS->IR.OutBuf[2] = QS->IR.SaveBuf[i][QS->IR.FrameID];
 					merge(QS->IR.OutBuf, 3, QS->IR.DispBuf[i]);
 #endif
-					sprintf_s(str,"%d",QS->IR.FrameID);
-					putText(QS->IR.DispBuf[0], str, Point(10, 30), FONT_HERSHEY_SIMPLEX, 1, CV_RGB(0, 255, 0), 2);
+
 					if (QS->IR.PlayDelay) Sleep(QS->IR.PlayDelay);
-				} else {
+				}
+				else
+				{
 #ifdef PTG_COLOR
 					QS->IR.ProcBuf[i][BufID].copyTo(QS->IR.DispBuf[i]);
 #else
+					/********************************************************OUR CODE ************************************************/
+					// Display if the ball was found or not
+					/*if (!QS->ST.foundBall())
+						putText(QS->IR.DispBuf[0], "Ball not found", Point(10, 30), FONT_HERSHEY_SIMPLEX, .5, CV_RGB(0, 255, 0), 2);
+
+					// Display last known 3D ball location, (-1, -1, -1) means it hasn't been found yet
+					Point3f lpt = QS->ST.getCurrent3DPoint();
+					String pt = "(" + to_string(lpt.x) + ", " + to_string(lpt.y) + ", " + to_string(lpt.z);
+					String str1 = "Last location: " + pt;
+					putText(QS->IR.DispBuf[0], str1, Point(10, 70), FONT_HERSHEY_SIMPLEX, .65, CV_RGB(255, 0, 0), 2);
+
+					// Draw circle around last known location of ball in left and right camera images
+					Point2f ptl = QS->ST.getLeftBallLocation();
+					Point2f ptr = QS->ST.getRightBallLocation();*/
+
 					// Display OutBuf1 when Catch Ball, otherwise display the input image
 					QS->IR.OutBuf[0] = QS->IR.OutBuf[1] = QS->IR.OutBuf[2] = (QS->IR.CatchBall) ? QS->IR.OutBuf1[i] : QS->IR.ProcBuf[i];
 					merge(QS->IR.OutBuf, 3, QS->IR.DispBuf[i]);
-					line(QS->IR.DispBuf[i], Point(320, 0), Point(320, 480), Scalar(0, 255, 0), 1, 8, 0);
-					line(QS->IR.DispBuf[i], Point(0, 240), Point(640, 240), Scalar(0, 255, 0), 1, 8, 0);
+
+					/*if (i)
+						circle(QS->IR.DispBuf[1], ptr, 5, CV_RGB(0, 0, 255), 2);
+					else
+						circle(QS->IR.DispBuf[0], ptl, 5, CV_RGB(0, 0, 255), 2);*/
+					//line(QS->IR.DispBuf[i], Point(320, 0), Point(320, 480), Scalar(0, 255, 0), 1, 8, 0);
+					//line(QS->IR.DispBuf[i], Point(0, 240), Point(640, 240), Scalar(0, 255, 0), 1, 8, 0);
 #endif
 				}
 				QS->QSSysDisplayImage();
 			}
 		}
-		if (QS->IR.CaptureSequence || QS->IR.DisplaySequence) {
+		if (QS->IR.CaptureSequence || QS->IR.DisplaySequence)
+		{
 			QS->IR.FrameID++;
 			if (QS->IR.FrameID == MAX_BUFFER) {				// Sequence if filled
 				QS->IR.CaptureSequence = FALSE;
@@ -173,7 +253,7 @@ long QSProcessThreadFunc(CTCSys *QS)
 			}
 		}
 		BufID = 1 - BufID;
-	} 
+	}
 	QS->EventEndProcess = FALSE;
 	return 0;
 }
@@ -200,24 +280,24 @@ void CTCSys::QSSysInit()
         AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP );
 	} else {
 		IR.NumCameras = (IR.NumCameras > MAX_CAMERA) ? MAX_CAMERA : IR.NumCameras;
-		for(i = 0; i < IR.NumCameras; i++) {		
+		for(i = 0; i < IR.NumCameras; i++) {
 			// Get PGRGuid
 			if (IR.busMgr.GetCameraFromIndex(i, &IR.prgGuid[i]) != PGRERROR_OK) {    // change to 1-i is cameras are swapped after powered up
 				sprintf_s(ErrorMsg, "PGRGuID Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
 			IR.pgrCamera[i] = new Camera;
-			if (IR.pgrCamera[i]->Connect(&IR.prgGuid[i]) != PGRERROR_OK) { 
+			if (IR.pgrCamera[i]->Connect(&IR.prgGuid[i]) != PGRERROR_OK) {
 				sprintf_s(ErrorMsg, "PConnect Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
 			// Set video mode and frame rate
-			if (IR.pgrCamera[i]->SetVideoModeAndFrameRate(VIDEO_FORMAT, CAMERA_FPS) != PGRERROR_OK) { 
+			if (IR.pgrCamera[i]->SetVideoModeAndFrameRate(VIDEO_FORMAT, CAMERA_FPS) != PGRERROR_OK) {
 				sprintf_s(ErrorMsg, "Video Format Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
 			// Set all camera configuration parameters
-			if (IR.pgrCamera[i]->SetConfiguration(&IR.cameraConfig) != PGRERROR_OK) { 
+			if (IR.pgrCamera[i]->SetConfiguration(&IR.cameraConfig) != PGRERROR_OK) {
 				sprintf_s(ErrorMsg, "Set Configuration Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
@@ -229,14 +309,14 @@ void CTCSys::QSSysInit()
 			// Set shutter sppeed
 			IR.cameraProperty.type = SHUTTER;
 			IR.cameraProperty.absValue = SHUTTER_SPEED;
-			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){	
+			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){
 				sprintf_s(ErrorMsg, "Shutter Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
 			// Set gamma value
 			IR.cameraProperty.type = GAMMA;
 			IR.cameraProperty.absValue = 1.0;
-			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){	
+			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){
 				sprintf_s(ErrorMsg, "Gamma Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
@@ -244,7 +324,7 @@ void CTCSys::QSSysInit()
 			IR.cameraProperty.type = SHARPNESS;
 			IR.cameraProperty.absControl = false;
 			IR.cameraProperty.valueA = 2000;
-			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){	
+			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){
 				sprintf_s(ErrorMsg, "Sharpness Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
@@ -255,7 +335,7 @@ void CTCSys::QSSysInit()
 			IR.cameraProperty.onOff = true;
 			IR.cameraProperty.valueA = WHITE_BALANCE_R;
 			IR.cameraProperty.valueB = WHITE_BALANCE_B;
-			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){	
+			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){
 				ErrorMsg.Format("White Balance Failure: %s",IR.PGRError.GetDescription());
 				AfxMessageBox( ErrorMsg, MB_ICONSTOP );
 			}
@@ -266,7 +346,7 @@ void CTCSys::QSSysInit()
 			IR.cameraProperty.onOff = true;
 			IR.cameraProperty.valueA = GAIN_VALUE_A;
 			IR.cameraProperty.valueB = GAIN_VALUE_B;
-			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){	
+			if(IR.pgrCamera[i]->SetProperty(&IR.cameraProperty, false) != PGRERROR_OK){
 				sprintf_s(ErrorMsg, "Gain Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
@@ -276,7 +356,7 @@ void CTCSys::QSSysInit()
 			IR.cameraTrigger.polarity = 0;
 			IR.cameraTrigger.source = 0;
 			IR.cameraTrigger.parameter = 0;
-			if(IR.pgrCamera[i]->SetTriggerMode(&IR.cameraTrigger, false) != PGRERROR_OK){	
+			if(IR.pgrCamera[i]->SetTriggerMode(&IR.cameraTrigger, false) != PGRERROR_OK){
 				sprintf_s(ErrorMsg, "Trigger Failure: %s", IR.PGRError.GetDescription());
 				AfxMessageBox(CA2W(ErrorMsg), MB_ICONSTOP);
 			}
@@ -306,23 +386,23 @@ void CTCSys::QSSysInit()
 		IR.AcqBuf[i].create(IR.DigSizeY, IR.DigSizeX, CV_8UC3);
 		IR.DispBuf[i].create(IR.DigSizeY, IR.DigSizeX, CV_8UC3);
 		IR.ProcBuf[i].create(IR.DigSizeY, IR.DigSizeX, CV_8UC3);
-		for (j=0; j<MAX_BUFFER; j++) 
+		for (j=0; j<MAX_BUFFER; j++)
 			IR.SaveBuf[i][j].create(IR.DigSizeY, IR.DigSizeX, CV_8UC3);
 #else
 		IR.AcqBuf[i].create(IR.DigSizeY, IR.DigSizeX, CV_8UC1);
 		IR.DispBuf[i].create(IR.DigSizeY, IR.DigSizeX, CV_8UC1);
 		IR.ProcBuf[i].create(IR.DigSizeY, IR.DigSizeX, CV_8UC1);
-		for (j=0; j<MAX_BUFFER; j++) 
+		for (j=0; j<MAX_BUFFER; j++)
 			IR.SaveBuf[i][j].create(IR.DigSizeY, IR.DigSizeX, CV_8UC1);
 #endif
 		IR.AcqPtr[i] = IR.AcqBuf[i].data;
-		IR.DispROI[i] = IR.DispBuf[i](R); 
-		IR.ProcROI[i] = IR.ProcBuf[i](R); 
+		IR.DispROI[i] = IR.DispBuf[i](R);
+		IR.ProcROI[i] = IR.ProcBuf[i](R);
 
 		IR.OutBuf1[i].create(IR.DigSizeY, IR.DigSizeX, CV_8UC1);
 		IR.OutBuf2[i].create(IR.DigSizeY, IR.DigSizeX, CV_8UC1);
-		IR.OutROI1[i] = IR.OutBuf1[i](R); 
-		IR.OutROI2[i] = IR.OutBuf2[i](R); 
+		IR.OutROI1[i] = IR.OutBuf1[i](R);
+		IR.OutROI2[i] = IR.OutBuf2[i](R);
 		IR.DispBuf[i] = Scalar(0);
 		IR.ProcBuf[i] = Scalar(0);
 	}
@@ -361,7 +441,7 @@ void CTCSys::initBitmapStruct(long iCols, long iRows)
     m_bitmapInfo.bmiHeader.biWidth			= iCols;
     m_bitmapInfo.bmiHeader.biHeight			= -iRows;
     m_bitmapInfo.bmiHeader.biBitCount		= 24;
-	m_bitmapInfo.bmiHeader.biSizeImage = 
+	m_bitmapInfo.bmiHeader.biSizeImage =
       m_bitmapInfo.bmiHeader.biWidth * m_bitmapInfo.bmiHeader.biHeight * (m_bitmapInfo.bmiHeader.biBitCount / 8 );
 }
 
